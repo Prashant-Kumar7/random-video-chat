@@ -12,7 +12,7 @@ function ChatPage() {
   const remoteAudio = useRef<HTMLAudioElement>(null)
   const [remoteName , setRemoteName] = useState("");
   const [pc , setPC] = useState<RTCPeerConnection | null>(null)
-  const[audio , setAudio] = useState(false)
+  
   const {name} = useParams()
   const [videoOn , setVideoNo] = useState(true)
   const [audioOn , setAudioOn] = useState(true)
@@ -174,13 +174,13 @@ function ChatPage() {
       pc.ontrack = async(event) => {
         const allTracks = event.streams[0].getTracks()
             if(remoteVideo.current){
-                const videoTrack = event.streams[0].getVideoTracks()[0]
+                // const videoTrack = event.streams[0].getVideoTracks()[0]
                 remoteVideo.current.srcObject = new MediaStream(allTracks);
                 remoteVideo.current.play()
             }
   
             if(remoteAudio.current){
-                const audioTrack = event.streams[0].getAudioTracks()[0]
+                // const audioTrack = event.streams[0].getAudioTracks()[0]
                 remoteAudio.current.srcObject = new MediaStream(allTracks)
                 remoteAudio.current.play()
             }
@@ -300,7 +300,7 @@ function ChatPage() {
         <div className='flex  flex-col text-center'>
             <video muted ref={remoteVideo} className='border w-96 h-96'></video>
             <div>Remote Name :{remoteName}</div>
-            <audio muted={audio} autoPlay ref = {remoteAudio}></audio>
+            <audio muted={false} autoPlay ref = {remoteAudio}></audio>
         </div>
       </div>
         {wait ? <div className='text-center'>waiting for someone to connect...</div> : <div></div> }
