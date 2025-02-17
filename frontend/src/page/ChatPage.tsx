@@ -290,26 +290,55 @@ function ChatPage() {
   }
 
   return (
-    <div className='flex flex-col'>
-      <div className='flex gap-6'>
-        <div className='flex  flex-col text-center'>
-            <video muted ref={localVideo} className='border w-96 h-96'></video>
-            <div>Local Name :{name}</div>
-        </div>
-
-        <div className='flex  flex-col text-center'>
-            <video muted ref={remoteVideo} className='border w-96 h-96'></video>
-            <div>Remote Name :{remoteName}</div>
-            <audio muted={false} autoPlay ref = {remoteAudio}></audio>
-        </div>
-      </div>
-        {wait ? <div className='text-center'>waiting for someone to connect...</div> : <div></div> }
-      <div className='my-8 flex gap-6 justify-center'>
-        {connected ? <button onClick={handleLeave} className='bg-red-700'>Leave</button> : <button onClick={handleClick} disabled={wait} className='bg-indigo-700 hover:bg-indigo-800'>start</button>}
-        <button onClick={toggleCamera} className={videoOn? "bg-indigo-700" : "bg-red-700"} >{videoOn? "Cam On" : "Cam Off"}</button>
-        <button onClick={toggleMic} className={audioOn? "bg-indigo-700" : "bg-red-700"} >{audioOn? "Mic On" :"Mic Off"}</button>
-      </div>
+<div className='flex flex-col'>
+  <div className='flex flex-col sm:flex-row gap-6'>
+    <div className='flex flex-col text-center w-full sm:w-1/2'>
+      <video muted ref={localVideo} className='border w-full h-auto sm:w-96 sm:h-96'></video>
+      <div>Local Name :{name}</div>
     </div>
+
+    <div className='flex flex-col text-center w-full sm:w-1/2'>
+      <video muted ref={remoteVideo} className='border w-full h-auto sm:w-96 sm:h-96'></video>
+      <div>Remote Name :{remoteName}</div>
+      <audio muted={false} autoPlay ref={remoteAudio}></audio>
+    </div>
+  </div>
+
+  {wait ? (
+    <div className='text-center'>waiting for someone to connect...</div>
+  ) : (
+    <div></div>
+  )}
+
+  <div className='my-8 flex flex-col sm:flex-row gap-6 justify-center'>
+    {connected ? (
+      <button onClick={handleLeave} className='bg-red-700 px-4 py-2 rounded'>
+        Leave
+      </button>
+    ) : (
+      <button
+        onClick={handleClick}
+        disabled={wait}
+        className='bg-indigo-700 hover:bg-indigo-800 px-4 py-2 rounded disabled:opacity-50'
+      >
+        start
+      </button>
+    )}
+    <button
+      onClick={toggleCamera}
+      className={`px-4 py-2 rounded ${videoOn ? 'bg-indigo-700' : 'bg-red-700'}`}
+    >
+      {videoOn ? 'Cam On' : 'Cam Off'}
+    </button>
+    <button
+      onClick={toggleMic}
+      className={`px-4 py-2 rounded ${audioOn ? 'bg-indigo-700' : 'bg-red-700'}`}
+    >
+      {audioOn ? 'Mic On' : 'Mic Off'}
+    </button>
+  </div>
+</div>
+
   )
 }
 
