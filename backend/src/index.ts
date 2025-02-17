@@ -8,5 +8,10 @@ const userManger = new UserManager()
 wss.on('connection', function connection(ws) {
   
     userManger.addUser(ws)
+    setInterval(()=>{
+        wss.clients.forEach((ws)=>{
+            ws.send(JSON.stringify({type : "ping"}))
+        })
+    },30000)
 
 });
