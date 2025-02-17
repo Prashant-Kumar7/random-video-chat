@@ -22,7 +22,7 @@ function ChatPage() {
 
 
   function startConnection(){
-    const socket = new WebSocket("ws://localhost:8080")
+    const socket = new WebSocket("ws://web-rtc-ws.tumsab.xyz")
     socket.onopen = ()=>{
       console.log('connected')
       setSocket(socket)
