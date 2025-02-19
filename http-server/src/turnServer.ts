@@ -1,24 +1,15 @@
-import Turn from "node-turn";
-import dotenv from "dotenv";
+import crypto from "crypto";
+const secret = "439a421a16dffcbef4569596292415af2af008db25f0ce94923507aa66c82793"; // Replace with your actual secret
 
-dotenv.config();
-
-const TURN_PORT = process.env.TURN_PORT || 3478;
-const REALM = process.env.REALM || "webrtc";
-
-const server = new Turn({
-    listeningPort: Number(TURN_PORT),
-    realm: REALM,
-    authMech: "long-term", // Long-term authentication
-    credentials: {} // Initially empty; will be populated dynamically
-});
-
-server.start();
-
-console.log(`TURN server running on port ${TURN_PORT}`);
-
-// Function to dynamically add users
-export function addTurnUser(username: string, password: string) {
-    server.staticCredentials[username] = password;
-    console.log(`Added TURN user: ${username}`);
+export function generateTurnCredentials(ttl = 600) {
+  const timestamp = Math.floor(Date.now() / 1000) + ttl;
+  const username = `${timestamp}`;
+  const hmac = crypto.createHmac("sha1", secret);
+  hmac.update(username);
+  const password = hmac.digest("base64");
+  return { username, password };
 }
+
+// Example usage:
+// const credentials = generateTurnCredentials();
+// console.log(credentials);

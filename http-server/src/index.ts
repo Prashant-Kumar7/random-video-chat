@@ -1,7 +1,8 @@
 import express from "express";
 import crypto from "crypto";
 import dotenv from "dotenv";
-import { addTurnUser } from "./turnServer"; // Import function from TURN server
+import cors from "cors"
+// import { addTurnUser } from "./turnServer"; // Import function from TURN server
 
 dotenv.config();
 
@@ -14,37 +15,26 @@ const TURN_PORT = process.env.TURN_PORT!;
 const REALM = process.env.REALM!;
 
 // Function to generate TURN credentials
-function generateTurnCredentials(usernameTTL: number = 3600) {
-    const timestamp = Math.floor(Date.now() / 1000) + usernameTTL;
-    const username = `${timestamp}`;
-    const hmac = crypto.createHmac("sha1", TURN_SECRET);
-    hmac.update(username);
-    const password = hmac.digest("base64");
+const secret = "439a421a16dffcbef4569596292415af2af008db25f0ce94923507aa66c82793"; // Replace with your actual secret
 
-    // Dynamically add the generated user to the TURN server
-    addTurnUser(username, password);
+app.use(express.json())
+app.use(cors())
 
-    return {
-        username,
-        credential: password,
-        ttl: usernameTTL,
-        servers: [
-            {
-                urls: `turn:${TURN_SERVER}:${TURN_PORT}`,
-                username,
-                credential: password,
-            },
-            {
-                urls: `stun:${TURN_SERVER}:${TURN_PORT}`,
-            },
-        ],
-    };
+export function generateTurnCredentials(ttl = 600) {
+  const timestamp = Math.floor(Date.now() / 1000) + ttl;
+  const username = `${timestamp}`;
+  const hmac = crypto.createHmac("sha1", secret);
+  hmac.update(username);
+  const password = hmac.digest("base64");
+  return { username, password };
 }
 
 // API Endpoint to Fetch TURN Credentials
 app.get("/get-turn-credentials", (req, res) => {
     const credentials = generateTurnCredentials();
+    console.log("stun/turn server was hit")
     res.json(credentials);
+
 });
 
 app.listen(PORT, () => {
