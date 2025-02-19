@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import '../App.css'
 import { useParams } from 'react-router-dom'
+import axios from 'axios'
 
 function ChatPage() {
 
@@ -18,7 +19,9 @@ function ChatPage() {
   const [audioOn , setAudioOn] = useState(true)
   const [localStream , setLocalStream] = useState<MediaStream>()
   const [connected , setConnected] = useState(false)
+  const pendingIceCandidates: RTCIceCandidateInit[] = [];
   const [wait, setWait] = useState(false)
+  
 
 
   function startConnection(){
@@ -41,8 +44,19 @@ function ChatPage() {
     }
   },[])
 
-  function newPC(){
-    const pc = new RTCPeerConnection()
+  async function newPC(){
+    const res = await axios("https://web-rtc-backend.tumsab.xyz/get-turn-credentials")
+    const turnCredentials = res.data;
+    const pc = new RTCPeerConnection({
+      iceServers: [
+        { urls: "stun:stun.call.tumsab.xyz" }, // Use STUN first
+        { 
+          urls: "turn:turn.call.tumsab.xyz", 
+          username: turnCredentials.username, 
+          credential: turnCredentials.password
+        } // Fallback to TURN if STUN fails
+      ]
+    });
     setPC(pc)
     startReceiving()
   }
@@ -83,31 +97,49 @@ function ChatPage() {
       if (res.type === 'createAnswer') {
           console.log("recevier sdp: ")
           console.log(res.sdp)
-          await pc?.setRemoteDescription(res.sdp);
+          console.log("Received SDP Answer")
+        if (pc.signalingState !== "stable") {
+          await pc.setRemoteDescription(new RTCSessionDescription(res.sdp))
+        } else {
+          console.warn("Skipping duplicate remote description")
+        }
       }
       
       
       if (res.type === 'iceCandidate') {
-          // console.log("recevier candidates :")
-          // console.log(res.candidate)
-          await pc?.addIceCandidate(res.candidate);
-      }
+        try {
+            if (pc.remoteDescription && pc.remoteDescription.type) {
+                await pc.addIceCandidate(res.candidate);
+            } else {
+                console.warn("ICE candidate received before SDP, storing for later");
+                pendingIceCandidates.push(res.candidate);
+            }
+        } catch (err) {
+            console.error("Failed to add ICE Candidate:", err);
+        }
+    }
+    
 
       if (res.type === 'createOffer') {
-        setRemoteName(res.name)
-
-        pc.setRemoteDescription(res.sdp).then(() => {
-            pc.createAnswer().then((answer) => {
-                pc.setLocalDescription(answer);
-                socket.send(JSON.stringify({
-                    type: 'createAnswer',
-                    sdp: answer
-                }));
-            });
-        });
-    } else if (res.type === 'iceCandidate') {
-        console.log("send candidates :")
-        pc.addIceCandidate(res.candidate);
+        setRemoteName(res.name);
+    
+        if (pc.signalingState === "stable") {
+            await pc.setRemoteDescription(new RTCSessionDescription(res.sdp));
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            socket.send(JSON.stringify({
+                type: 'createAnswer',
+                sdp: answer
+            }));
+    
+            // ✅ Now add any pending ICE candidates
+            while (pendingIceCandidates.length > 0) {
+                const candidate = pendingIceCandidates.shift();
+                await pc.addIceCandidate(candidate);
+            }
+        } else {
+            console.warn("Skipping duplicate offer");
+        }
     }
 
     if(res.type === "close_conn"){
@@ -143,9 +175,6 @@ function ChatPage() {
               remoteAudio.current.play()
           }
     }
-
-    
-
     }
   }
 
